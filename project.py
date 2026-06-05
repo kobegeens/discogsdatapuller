@@ -13,7 +13,7 @@ apiparams = {
 }
 filename = "songs.csv"
 
-
+#functions
 def add_song():
     #get data
     release = input("discogs releasenumber: ") #example releasenumber = 249504
@@ -23,21 +23,15 @@ def add_song():
         response.raise_for_status()
     except requests.exceptions.HTTPError:
         print(response)
-        print("Song unavailable or bad internet connection.")
+        print("song unavailable or bad internet connection")
         start()
     songdata = response.json()
-    ##print(songdata)
     title = songdata["title"]
     artists = songdata["artists"][0]["name"]
     year = songdata["year"]
+    release = {"title":title, "artists":artists, "year":year, "url":url}
 
-    #add data to dictionary
-    songs[release] = {"title":title, "year":year, "artists":artists}
-
-
-    print(f"Added {title} by {artists} from {year}.")
-
-    #CSV
+    #add to CSV file
     with open(filename, "r", encoding="utf-8") as file:
         reader = csv.reader(file)
         for row in reader:
@@ -48,14 +42,19 @@ def add_song():
                     start()
                 else:
                     continue
-    with open(filename, "a", encoding="utf-8") as file:
-        writer = csv.writer(file)
+    try:
+        with open(filename, "a", encoding="utf-8") as file:
+            writer = csv.writer(file)
 
-        writer.writerow([release] + list(songs[release].values()))
+            writer.writerow([release] + list(songs[release].values()))
+        print(f"succesfully added {title} by {artists} from {year}.")
+    except PermissionError:
+        print("couldn't access file, make sure it's closed")
     start()
 
 def delete_song():
     delete = input("discogs releasenumber: ")
+    #search for song
     with open(filename, "r", encoding="utf-8") as file:
         reader = csv.reader(file)
         currentrows = [row for row in reader if row]
@@ -63,10 +62,14 @@ def delete_song():
     if len(currentrows) == len(keeprows):
             print("couldn't find song")
             start()
-    with open(filename, "w", encoding="utf-8") as file:
-        writer = csv.writer(file)
-        writer.writerows(keeprows)
-    print("succesfully deleted song")
+    #delete song
+    try:
+        with open(filename, "w", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerows(keeprows)
+        print("succesfully deleted song")
+    except PermissionError:
+        print("couldn't access file, make sure it's closed")
     start()
 
 
@@ -80,7 +83,7 @@ def list_songs():
 
 def start():
     #interface
-    choice = input("\n0: add song \n1: delete song \n3: list songs\n4: exit\n")
+    choice = input("\n0: add song \n1: delete song \n3: list songs\n4: exit\noption: ")
     match choice:
         case "0":
             add_song()
