@@ -18,8 +18,13 @@ def add_song():
     #get data
     release = input("discogs releasenumber: ") #example releasenumber = 249504
     url = "https://api.discogs.com/releases/"+release
-    response = requests.get(url, headers=apiheaders, params=apiparams)
-    print(response)
+    try:
+        response = requests.get(url, headers=apiheaders, params=apiparams)
+        response.raise_for_status()
+    except requests.exceptions.HTTPError:
+        print(response)
+        print("Song unavailable or bad internet connection.")
+        start()
     songdata = response.json()
     ##print(songdata)
     title = songdata["title"]
@@ -53,11 +58,15 @@ def delete_song():
     delete = input("discogs releasenumber: ")
     with open(filename, "r", encoding="utf-8") as file:
         reader = csv.reader(file)
-        writer = csv.writer(file)
-        keeprows = [row for row in reader if row and row[0] != delete]
+        currentrows = [row for row in reader if row]
+    keeprows = [row for row in currentrows if row and row[0] != delete]
+    if len(currentrows) == len(keeprows):
+            print("couldn't find song")
+            start()
     with open(filename, "w", encoding="utf-8") as file:
         writer = csv.writer(file)
         writer.writerows(keeprows)
+    print("succesfully deleted song")
     start()
 
 
